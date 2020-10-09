@@ -40,7 +40,7 @@ namespace Canasta
         public Card(Value cardValue, Suit cardSuit)
         {
             this.cardValue = cardValue;
-            this.cardSuit = cardSuit;
+            this.CardSuit = cardSuit;
             pointValue = ComputeScore();
         }
 

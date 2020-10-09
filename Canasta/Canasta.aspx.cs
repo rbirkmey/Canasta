@@ -11,12 +11,13 @@ namespace Canasta
     {
         protected void Page_Load(object sender, EventArgs e)
         {
+            int numberOfHands = 4;
             List<Card> deck = new List<Card>();
-            List<Card> yourHand = new List<Card>();
-            int playerScore = 0;
+            List<Card>[] hands = new List<Card>[numberOfHands];
+            int[] playerScore = new int[numberOfHands];
 
             // 4 players play with 5 decks of cards including 2 jokers in each
-            for (int x = 0; x < 5; x++)
+            for (int x = 0; x < hands.Length+1; x++)
             {
                 // Arbitrarily decided red joker is diamonds and black joker is spades
                 Card jokerCard = new Card(Card.Value.Joker, Card.Suit.Diamonds);
@@ -38,7 +39,6 @@ namespace Canasta
                     }
                 }
             }
-
             List<Card> shuffledDeck = new List<Card>();
 
             if (System.Web.HttpContext.Current.Session["deck"] == null)
@@ -47,42 +47,54 @@ namespace Canasta
                 Random rand = new Random();
                 shuffledDeck = deck.OrderBy(card => rand.Next()).ToList();
 
-                // Transfers the last 15 cards from the shuffled deck to your hand
-                for (int x = 0; x < 15; x++)
+                for (int x = 0; x < hands.Length; x++)
                 {
-                    yourHand.Add(shuffledDeck[shuffledDeck.Count - 1]);
-                    shuffledDeck.RemoveAt(shuffledDeck.Count - 1);
-                }
+                    hands[x] = new List<Card>();
+                    // Transfers the last 15 cards from the shuffled deck to your hand
+                    for (int y = 0; y < 15; y++)
+                    {
+                        hands[x].Add(shuffledDeck[shuffledDeck.Count - 1]);
+                        shuffledDeck.RemoveAt(shuffledDeck.Count - 1);
+                    }
 
-                Session.Add("deck", shuffledDeck);
-                Session.Add("hand", yourHand);
+                    Session.Add("deck", shuffledDeck);
+                    Session.Add("hand" + x+1, hands[x]);
+                }
             }
             else
             {
                 shuffledDeck = (List<Card>)System.Web.HttpContext.Current.Session["deck"];
-                yourHand = (List<Card>)System.Web.HttpContext.Current.Session["hand"];
+                for (int x = 0; x < hands.Length; x++)
+                {
+                    hands[x] = (List<Card>)System.Web.HttpContext.Current.Session["hand" + x+1];
+                }
             }
 
-            // Displays shuffled deck
-
-            /*foreach (Card card in shuffledDeck)
+            // Displays hands
+            for (int x = 0; x < hands.Length; x++)
             {
-                Image image = new Image();
-                image.ImageUrl = "Images/" + card.CardValue + card.CardSuit + ".png";
-                image.Height = 100;
-                TestImages.Controls.Add(image);
-            }*/
+                playerScore[x] = 0;
 
-            // Displays your hand
-            foreach (Card card in yourHand)
-            {
-                ImageButton image = new ImageButton();
-                
-                image.ImageUrl = "Images/" + card.CardValue + card.CardSuit + ".png";
-                image.Height = 100;
-                TestImages.Controls.Add(image);                
-                playerScore = playerScore + card.PointValue;
-                TextBox1.Text = playerScore.ToString();
+                foreach (Card card in hands[x])
+                {
+                    ImageButton image = new ImageButton
+                    {
+                        ImageUrl = "Images/" + card.CardValue + card.CardSuit + ".png",
+                        Height = 100
+                    };
+
+                    TestImages.Controls.Add(image);
+                    playerScore[x] = playerScore[x] + card.PointValue;
+                }
+
+                TextBox textbox = new TextBox
+                {
+                    ID = "Player" + (x + 1) + "Score",
+                    Text = playerScore[x].ToString()
+                };
+
+                TestImages.Controls.Add(textbox);
+                TestImages.Controls.Add(new LiteralControl("<br />"));
             }
         }
     }
